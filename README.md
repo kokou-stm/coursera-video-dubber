@@ -4,7 +4,9 @@ This Chrome extension allows dubbing Coursera videos from English to other langu
 
 ##  Demo Video
 
-https://github.com/user-attachments/assets/demo.mov
+<video src="https://github.com/user-attachments/assets/5881ef9f-74f5-456e-b4e3-9908b31bd431" controls width="600">
+  Demo de l'application
+</video>
 
 
 ## Features
