@@ -1,6 +1,3 @@
-// Pas de SDK — on utilise l'API REST Azure directement (le SDK utilise `window` qui n'existe pas dans un service worker)
-
-// Charger les clés API depuis config.js (non commité sur GitHub)
 importScripts('config.js');
 
 const AOAI_ENDPOINT       = CONFIG.AOAI_ENDPOINT;
@@ -11,7 +8,6 @@ const TRANSLATOR_ENDPOINT = CONFIG.TRANSLATOR_ENDPOINT;
 const SPEECH_KEY          = CONFIG.SPEECH_KEY;
 const SPEECH_REGION       = CONFIG.SPEECH_REGION;
 
-// Voix neurales Azure par code de langue
 const VOICES = {
   fr: 'fr-FR-DeniseNeural',
   es: 'es-ES-ElviraNeural',
@@ -24,10 +20,8 @@ const VOICES = {
   ar: 'ar-SA-ZariyahNeural',
 };
 
-// Cache du token d'accès Azure TTS (valable 10 min)
 let tokenCache = { token: null, expiresAt: 0 };
 
-// ─── Routeur de messages ──────────────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'translate') {
     translateBatch(request.texts, request.from, request.to)
@@ -39,7 +33,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'synthesize') {
     synthesize(request.text, request.lang, request.voice)
       .then(audioData => {
-        // Convertir en base64 pour éviter la corruption du ArrayBuffer via sendMessage
         const bytes = new Uint8Array(audioData);
         let binary = '';
         for (let i = 0; i < bytes.byteLength; i++) {
@@ -53,8 +46,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// ─── Traduction intelligente via GPT-4o (interprète professionnel) ───────────
-// Envoie tous les segments en un seul appel pour garder le contexte global
 async function translateBatch(texts, from, to) {
   const LANG_NAMES = {
     fr: 'français', es: 'espagnol', de: 'allemand', pt: 'portugais',
@@ -62,7 +53,6 @@ async function translateBatch(texts, from, to) {
   };
   const targetLang = LANG_NAMES[to] || to;
 
-  // Numéroter les segments pour retrouver l'ordre dans la réponse
   const numbered = texts.map((t, i) => `[${i}] ${t}`).join('\n');
 
   const systemPrompt = `Tu es un interprète simultané professionnel spécialisé dans les cours universitaires de technologie et d'intelligence artificielle.
@@ -89,14 +79,13 @@ Règles strictes :
         { role: 'system', content: systemPrompt },
         { role: 'user',   content: numbered },
       ],
-      temperature: 0.3,   // faible pour cohérence
+      temperature: 0.3,
       max_tokens: Math.min(texts.length * 80, 4000),
     }),
   });
 
   if (!response.ok) {
     const err = await response.text();
-    // Fallback sur Azure Translator si GPT échoue
     console.warn('[Dubber] GPT-4o échoué, fallback Azure Translator :', err);
     return translateBatchFallback(texts, from, to);
   }
@@ -104,7 +93,6 @@ Règles strictes :
   const data   = await response.json();
   const output = data.choices[0].message.content;
 
-  // Parser la réponse : chaque ligne "[N] texte traduit"
   const result = new Array(texts.length).fill('');
   const lines  = output.split('\n').filter(l => l.trim());
   for (const line of lines) {
@@ -115,7 +103,6 @@ Règles strictes :
     }
   }
 
-  // Si certains segments sont vides, utiliser le fallback pour ceux-là
   const missing = result.map((t, i) => t ? null : i).filter(i => i !== null);
   if (missing.length > 0) {
     console.warn('[Dubber] Segments manquants dans la réponse GPT, fallback pour :', missing);
@@ -127,7 +114,6 @@ Règles strictes :
   return result;
 }
 
-// ─── Fallback : Azure Translator (si GPT-4o indisponible) ────────────────────
 async function translateBatchFallback(texts, from, to) {
   const response = await fetch(
     `${TRANSLATOR_ENDPOINT}translate?api-version=3.0&from=${from}&to=${to}`,
@@ -149,12 +135,9 @@ async function translateBatchFallback(texts, from, to) {
   return data.map(item => item.translations[0].text);
 }
 
-// ─── Synthèse vocale via l'API REST Azure TTS ─────────────────────────────────
 async function synthesize(text, lang, voiceOverride) {
   const token = await getAccessToken();
   const voice = voiceOverride || VOICES[lang] || VOICES['fr'];
-
-  // Déterminer le locale à partir de la voix (ex: "fr-FR-DeniseNeural" → "fr-FR")
   const locale = voice.split('-').slice(0, 2).join('-');
 
   const ssml = `<speak version='1.0' xml:lang='${locale}'>
@@ -187,7 +170,6 @@ async function synthesize(text, lang, voiceOverride) {
   return await response.arrayBuffer();
 }
 
-// ─── Token Azure (mis en cache 9 min, expire après 10 min) ───────────────────
 async function getAccessToken() {
   const now = Date.now();
   if (tokenCache.token && now < tokenCache.expiresAt) {
@@ -207,31 +189,28 @@ async function getAccessToken() {
   }
 
   const token = await response.text();
-  tokenCache = { token, expiresAt: now + 9 * 60 * 1000 }; // 9 minutes
+  tokenCache = { token, expiresAt: now + 9 * 60 * 1000 };
   return token;
 }
 
-// ─── Nettoie le texte avant envoi au TTS ─────────────────────────────────────
 function cleanForTTS(text, lang) {
   let t = text
-    .replace(/\[.*?\]/g, '')           // supprime [MUSIC], [APPLAUSE], etc.
-    .replace(/\(.*?\)/g, '')           // supprime (inaudible), etc.
-    .replace(/\.{2,}/g, ' ')           // "..." → espace (pause naturelle)
-    .replace(/([!?])/g, '$1 ')         // garde ! et ? mais ajoute un espace après
-    .replace(/\./g, ' ')               // supprime TOUS les points — la voix neurale gère les pauses seule
+    .replace(/\[.*?\]/g, '')
+    .replace(/\(.*?\)/g, '')
+    .replace(/\.{2,}/g, ' ')
+    .replace(/([!?])/g, '$1 ')
+    .replace(/\./g, ' ')
     .replace(/\s{2,}/g, ' ')
     .trim();
 
-  // Langues européennes : convertit le point décimal résiduel en virgule
   const useCommaDecimal = ['fr', 'es', 'de', 'pt', 'it'].includes(lang);
   if (useCommaDecimal) {
-    t = t.replace(/(\d),(\d)/g, '$1,$2'); // garde les virgules décimales déjà converties
+    t = t.replace(/(\d),(\d)/g, '$1,$2');
   }
 
   return t;
 }
 
-// ─── Utilitaire : échappe les caractères XML dans le texte ───────────────────
 function escapeXml(text) {
   return text
     .replace(/&/g, '&amp;')
