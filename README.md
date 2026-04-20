@@ -1,6 +1,6 @@
 # Coursera Video Dubber Chrome Extension
 
-This Chrome extension allows dubbing Coursera videos from English to other languages (e.g., French) using Azure Cognitive Services.
+This Chrome extension allows dubbing Coursera videos from English to other languages (e.g., French).
 
 ##  Demo Video
 
@@ -16,7 +16,7 @@ This Chrome extension allows dubbing Coursera videos from English to other langu
 
 ## Installation
 1. Download or clone this repository.
-2. Copy `config.example.js` to `config.js` and fill in your Azure API keys:
+2. Copy `config.example.js` to `config.js` and fill in your  API keys:
    ```bash
    cp config.example.js config.js
    ```
