@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Coursera Dubber</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 240px;
+      padding: 16px;
+      font-family: sans-serif;
+      font-size: 13px;
+      color: #202124;
+    }
+    h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #1a73e8;
+    }
+    label {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: 500;
+      color: #5f6368;
+    }
+    select {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid #dadce0;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 10px;
+      background: #fff;
+    }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    button {
+      flex: 1;
+      padding: 7px 10px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button:hover { opacity: 0.85; }
+    #btn-activate   { background: #1a73e8; color: #fff; }
+    #btn-deactivate { background: #e8eaed; color: #202124; }
+  </style>
+</head>
+<body>
+  <h3>Coursera Dubber</h3>
+
+  <label for="lang">Langue de sortie :</label>
+  <select id="lang"></select>
+
+  <label for="voice">Voix :</label>
+  <select id="voice"></select>
+
+  <div class="btn-row">
+    <button id="btn-activate">Activer</button>
+    <button id="btn-deactivate">Arrêter</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

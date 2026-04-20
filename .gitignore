@@ -1,0 +1,8 @@
+# Clés API — ne jamais committer
+config.js
+
+# OS
+.DS_Store
+
+# Vidéo demo (trop lourd pour GitHub)
+demo.mov
